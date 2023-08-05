@@ -1,6 +1,7 @@
 # pandra_minter @retrodrop_farmer @animal_fermer
 
 YOUTUBE TUTORIAL: https://youtu.be/wR-aNjIGmZk
+
 A script that will mint 6 pandras on 4 chains: BNB, CELO, POLYGON, CORE.
 
 Put private keys into privates.txt
