@@ -1,6 +1,7 @@
 from web3 import Web3, Account
 from threading import Thread
 import time
+import random
 
 from config import routers, abi, Pandra_settings
 
@@ -64,6 +65,7 @@ def mint_pandras(route_name, route_config, pk, proxy):
     account = Account.from_key(pk)
     print(f'{account.address} is now minting on ', route_name.upper())
     for i in range(6):
+        time.sleep(random.randint(5,10))
         try:
             empty_transaction, account, web3 = create_mint_transaction(pk, route_config, proxy)
             transaction = estimate_gas(empty_transaction, account, web3)
