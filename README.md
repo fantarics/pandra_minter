@@ -1,4 +1,4 @@
-# pandra_minter
+# pandra_minter @retrodrop_farmer @animal_fermer
 
 A script that will mint 6 pandras on 4 chains: BNB, CELO, POLYGON, CORE.
 
@@ -16,3 +16,6 @@ HOW TO START:
 - After installation puut the private keys and proxies in place
 
 - Start programm with `python main.py`
+
+Follow for more:
+https://t.me/retrodrop_farmer
