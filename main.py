@@ -44,6 +44,7 @@ def create_mint_transaction(private_key, route_config: Pandra_settings, proxy):
 
 
 def estimate_gas(transaction, account, web3: Web3):
+    bnb_chain_id = 56
     nonce = web3.eth.get_transaction_count(account.address)
     transaction['nonce'] = nonce
     gas_estimate = web3.eth.estimate_gas(transaction)
@@ -51,7 +52,8 @@ def estimate_gas(transaction, account, web3: Web3):
     wei_estimate = web3.eth.gas_price
     print('wei', wei_estimate)
     transaction['gasPrice'] = int(wei_estimate)
-    #input(transaction)
+    if web3.eth.chain_id == bnb_chain_id:
+        transaction['gasPrice'] = web3.to_wei('1.5', 'gwei')
     return transaction
 
 
