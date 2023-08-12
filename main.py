@@ -2,8 +2,9 @@ from web3 import Web3, Account
 from threading import Thread
 import time
 import random
-
+from bridge.func import do_one_address
 from config import routers, abi, Pandra_settings
+from utils import *
 
 with open('privates.txt', 'r') as file:
     private_keys = [line.strip() for line in file.readlines()]
@@ -12,54 +13,6 @@ with open('privates.txt', 'r') as file:
 with open('proxies.txt', 'r') as file:
     proxies = [proxy.strip() if proxy.strip() and proxy.strip() != '-' else None for proxy in file.readlines() ]
     # print(proxies)
-
-
-def create_mint_transaction(private_key, route_config: Pandra_settings, proxy):
-    # login, password, ip, port = proxy
-    account = Account.from_key(private_key)
-    if proxy:
-        request_kwargs = {'proxies': {
-            'https': proxy,
-            'http': proxy
-        }}
-    else:
-        request_kwargs = {}
-    web3 = Web3(
-        provider=Web3.HTTPProvider(
-            endpoint_uri=route_config.rpc,
-            request_kwargs=request_kwargs
-        )
-    )
-    pandra_contract = web3.eth.contract(web3.to_checksum_address(route_config.contract), abi=abi)
-    empty_transaction = pandra_contract.functions.mint().build_transaction(
-        {
-            'nonce': 0,
-            'value': 0,
-            'from': account.address,
-            'gas': 0,
-            'gasPrice': 0
-        }
-    )
-    return empty_transaction, account, web3
-
-
-def estimate_gas(transaction, account, web3: Web3):
-    bnb_chain_id = 56
-    nonce = web3.eth.get_transaction_count(account.address)
-    transaction['nonce'] = nonce
-    gas_estimate = web3.eth.estimate_gas(transaction)
-    transaction['gas'] = int(gas_estimate * 1.2)
-    wei_estimate = web3.eth.gas_price
-    print('wei', wei_estimate)
-    transaction['gasPrice'] = int(wei_estimate)
-    if web3.eth.chain_id == bnb_chain_id:
-        transaction['gasPrice'] = web3.to_wei('1.5', 'gwei')
-    return transaction
-
-
-def broadcast_transaction(transaction, web3: Web3, account: Account):
-    signed_transaction = account.sign_transaction(transaction)
-    return web3.eth.send_raw_transaction(signed_transaction.rawTransaction)
 
 
 def mint_pandras(route_name, route_config, pk, proxy):
@@ -88,32 +41,49 @@ def mint_pandras(route_name, route_config, pk, proxy):
         file.write(''.join(pk_logs))
     return
 
+def start_minting():
+    total_threads = []
 
-total_threads = []
+    for index, private in enumerate(private_keys):
+        try:
+            proxy = proxies[index]
+        except:
+            proxy = None
+        for route_name, route_config in routers.items():
+            route_thread = Thread(target=mint_pandras, args=(route_name, route_config, private, proxy,))
+            total_threads.append(route_thread)
+    print('Total transactions = ', len(total_threads))
 
-for index, private in enumerate(private_keys):
-    try:
-        proxy = proxies[index]
-    except:
-        proxy = None
-    for route_name, route_config in routers.items():
-        route_thread = Thread(target=mint_pandras, args=(route_name, route_config, private, proxy,))
-        total_threads.append(route_thread)
-print('Total transactions = ', len(total_threads))
+    current_threads = []
+    while total_threads:
+        if len(current_threads) > 10:
+            for index, started_thread in enumerate(current_threads):
+                if not started_thread.is_alive():
+                    current_threads.pop(index)
+            continue
+        thread = total_threads.pop(0)
+        current_threads.append(thread)
+        thread.start()
 
-current_threads = []
-while total_threads:
-    if len(current_threads) > 10:
-        for index, started_thread in enumerate(current_threads):
-            if not started_thread.is_alive():
-                current_threads.pop(index)
-        continue
-    thread = total_threads.pop(0)
-    current_threads.append(thread)
-    thread.start()
+    for started_thread in current_threads:
+        started_thread.join()
 
-for started_thread in current_threads:
-    started_thread.join()
+    print('work finished')
 
-print('work finished')
+
+if __name__ == '__main__':
+    while True:
+        print('Choose.\n'
+              '1 - mint pandas\n'
+              '2 - bridge pandas\n'
+              '0 - exit')
+        response = input('Answer: ')
+        if response not in ['1', '2']:
+            import sys
+            sys.exit()
+        else:
+            if response == '1':
+                start_minting()
+            else:
+                do_one_address()
 
