@@ -28,6 +28,32 @@ def get_pandas(route_config: Pandra_settings, web3: Web3, pk):
     return still_owned
 
 
+def approve_for_all(panda_contract, pk, bridge_contract, web3):
+    account = Account.from_key(pk)
+    transaction = panda_contract.functions.setApprovalForAll(
+        web3.to_checksum_address(bridge_contract),
+        True
+    ).build_transaction(
+        {
+            'nonce': 0,
+            'value': 0,
+            'from': account.address,
+            'gas': 0,
+            'gasPrice': 0
+        }
+    )
+    transaction = estimate_gas(transaction, account, web3)
+    tx_id = broadcast_transaction(transaction, web3, account)
+    while True:
+        try:
+            web3.eth.get_transaction_receipt(tx_id.hex())
+            break
+        except:
+            time.sleep(1)
+            continue
+    return tx_id
+
+
 def do_one_address():
     pk = input("Private key: ")
     pk_logs = []
@@ -46,15 +72,22 @@ def do_one_address():
         pk_pandas[route_name] = panda_ids
 
     for source, destination in destinations.items():
-        print('from ', source)
         chain_config = destination['network']
         pandas = pk_pandas.get(chain_config.name) or []
         account = Account.from_key(pk)
-        print(source, pandas)
-        #if pandas:
-            #pandas.pop(-1)
+        web3 = Web3(Web3.HTTPProvider(chain_config.rpc))
+        abi_choice = {
+            'l0': l0_abi,
+            'zkbridge': zkbridge_abi
+        }
         if not pandas:
             continue
+        bridge_contracts = set([value.send_trough_contract for key, value in [(key, value) for key, value in destination.items() if key != 'network']])
+        print(bridge_contracts)
+        assert len(bridge_contracts) == 2
+        for bridge_contract in bridge_contracts:
+            panda_contract = web3.eth.contract(chain_config.contract, abi=abi)
+            approve_for_all(panda_contract, pk, bridge_contract, web3)
         for index, (chain_id, config) in enumerate([(key, value) for key, value in destination.items() if key != 'network']):
             if chain_id == 'network':
                 continue
@@ -64,13 +97,9 @@ def do_one_address():
                 print('Панды закончились до рассылки во все сети')
                 break
             config: Destination_config
-            web3 = Web3(Web3.HTTPProvider(chain_config.rpc))
             print('to chain id', chain_id, config.method)
             # print(config)
-            abi_choice = {
-                'l0': l0_abi,
-                'zkbridge': zkbridge_abi
-            }
+
             send_contract = web3.eth.contract(
                 web3.to_checksum_address(config.send_trough_contract),
                 abi=abi_choice[config.method]

@@ -7,7 +7,7 @@ class Pandra_settings:
     contract: str
     api_key: str
     explorer_url: str
-    name: str | None = None
+    name: str #| None = None
 
 
 @dataclass
@@ -67,7 +67,7 @@ destinations = {
         ),
         # COMBO
         114: Destination_config(
-            "J",
+            "0xe09828f0da805523878be66ea2a70240d312001e",
             "zkbridge"
         ),
         # CELO
@@ -126,21 +126,11 @@ destinations = {
             "0xe47b0a5f2444f9b360bd18b744b8d511cfbf98c6",
             "l0"
         ),
-        # # MANTLE
-        # 181: Destination_config(
-        #     "0xe47b0a5f2444f9b360bd18b744b8d511cfbf98c6",
-        #     "l0"
-        # ),
         # POLYGON
         109: Destination_config(
             "0xe47b0a5f2444f9b360bd18b744b8d511cfbf98c6",
             "l0"
         ),
-        # # CoreDAO
-        # 153: Destination_config(
-        #     "0xe47b0a5f2444f9b360bd18b744b8d511cfbf98c6",
-        #     "l0"
-        # ),
         # opBNB
         116: Destination_config(
             "0x24339b7f8d303527C8681382AbD4Ec299757aF63",
